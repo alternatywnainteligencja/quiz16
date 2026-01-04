@@ -3,5 +3,5 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: '/quiz12/', // 👈 bardzo ważne dla GitHub Pages
+  base: '/quiz16/', // 👈 bardzo ważne dla GitHub Pages
 });
