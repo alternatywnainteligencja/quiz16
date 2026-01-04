@@ -1,3 +1,18 @@
+/**
+ * MarriageQuiz.tsx
+ *
+ * Główny komponent quizu „Analiza sytuacji małżeńskiej”.
+ * 
+ * Funkcje:
+ * - Wyświetla ekran startowy z wyborem ścieżki życiowej użytkownika (przed ślubem, w małżeństwie, kryzys, rozwód)
+ * - Steruje nawigacją między ekranem startowym, właściwym quizem (Pathway) i ekranem wyniku
+ * - Przechowuje stany:
+ *    - pathway – aktualnie wybrana ścieżka quizu
+ *    - result – wynik quizu po zakończeniu
+ * - Po zakończeniu quizu wyświetla komponent ResultDisplay z możliwością restartu
+ * - Współpracuje z komponentami ścieżek: BeforePathway, MarriedPathway, CrisisPathway, DivorcePathway
+ * - Odpowiada za wizualną spójność quizu oraz logikę przełączania między ekranami
+ */
 import React, { useState } from 'react';
 import { Heart } from 'lucide-react'; // Ikona serca używana w nagłówku
 import BeforePathway from '../pathways/BeforePathway'; // Ścieżka quizu dla osób planujących ślub
