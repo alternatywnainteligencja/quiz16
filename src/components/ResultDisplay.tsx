@@ -1,3 +1,25 @@
+/**
+ * ResultDisplay.tsx
+ *
+ * Główny komponent wizualizujący wynik quizu małżeńskiego.
+ *
+ * Funkcje:
+ * - Wyświetla główny nagłówek z poziomem ryzyka i pewnością prognozy (RiskBadge)
+ * - Prezentuje opis sytuacji użytkownika / pary (mainTitle, mainDescription)
+ * - Wizualizuje główne ryzyka procentowo za pomocą PercentBar
+ * - Pokazuje scenariusze ryzyka i prawdopodobieństwa zdarzeń (ScenarioCard)
+ * - Wyświetla zalecenia i działania strategiczne (ActionItem, RecommendationList)
+ * - Prezentuje oś czasu działań (TimelineCard) oraz psychologiczne profile użytkownika i partnera (PsychologicalProfile)
+ * - Podaje listę książek rekomendowanych do przeczytania (BookRecommendation)
+ * - Udostępnia przyciski restartu i kopiowania podsumowania
+ * - Obsługuje surowe dane meta i sekcję debugowania (DebugMeta)
+ *
+ * Komponent jest w pełni prezentacyjny i oparty na Tailwind CSS.
+ * Nie przechowuje własnego stanu – wszystkie dane otrzymuje przez props `result`.
+ * 
+ * Struktura umożliwia łatwe rozbudowanie lub podmianę poszczególnych sekcji wizualnych.
+ */
+
 // Importy React oraz ikon z bibliotek lucide-react i react-icons
 import React from "react";
 import { TriangleAlert, DollarSign, TrendingDown, Shield, ClipboardCheck, FileText, RefreshCw, Brain, BookOpenText, Heading1Icon, Heading2, Scale } from "lucide-react";
