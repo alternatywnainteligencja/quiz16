@@ -1,5 +1,5 @@
 /**
- * POPRAWIONA wersja obliczeń - używa RZECZYWISTYCH odpowiedzi użytkownika
+ * ten program bierze odpowiedzi użytkowników i oblicza na ich podstawie rezultat, który przekaże do Results
  * Dynamicznie generuje content na podstawie danych, nie statycznych szablonów
  */
 
