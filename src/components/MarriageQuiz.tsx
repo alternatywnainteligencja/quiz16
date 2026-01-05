@@ -14,6 +14,7 @@
  * - Odpowiada za wizualną spójność quizu oraz logikę przełączania między ekranami
  */
 import React, { useState } from 'react';
+import { QuizState } from '../quiz/types';
 import { Heart } from 'lucide-react'; // Ikona serca używana w nagłówku
 import BeforePathway from '../pathways/BeforePathway'; // Ścieżka quizu dla osób planujących ślub
 import MarriedPathway from '../pathways/MarriedPathway'; // Ścieżka quizu dla osób będących w małżeństwie
