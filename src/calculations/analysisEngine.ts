@@ -41,6 +41,13 @@ export function analyzeAnswers(
   weights: Array<any>
 ): AnalysisResult {
   
+  console.log('🔍 === ANALIZA ROZPOCZĘTA ===');
+  console.log('📝 Otrzymane odpowiedzi:', answers);
+  console.log('⚖️ Liczba wag w bazie:', weights.length);
+  
+  // Debug: Pokaż pierwsze 3 wagi
+  console.log('🔍 Przykładowe wagi:', weights.slice(0, 3));
+  
   // 1. Oblicz punkty ryzyka
   let totalRiskPoints = 0;
   let maxPossiblePoints = 0;
@@ -48,12 +55,20 @@ export function analyzeAnswers(
   const matchedWeights: Array<any> = [];
   
   Object.entries(answers).forEach(([questionId, answerText]) => {
+    console.log(`\n🔍 Szukam: questionId="${questionId}", answer="${answerText}"`);
+    
+    // Debug: Sprawdź czy istnieją wagi dla tego pytania
+    const weightsForQuestion = weights.filter(w => w.questionId === questionId);
+    console.log(`   Znalezione wagi dla pytania (${weightsForQuestion.length}):`, 
+      weightsForQuestion.map(w => w.answer)
+    );
+    
     const weight = weights.find(
       w => w.questionId === questionId && w.answer === answerText
     );
     
     if (weight) {
-      console.log(`✓ Match: ${questionId} = "${answerText}" → ${weight.riskPoints} pts`);
+      console.log(`   ✅ MATCH! → ${weight.riskPoints} punktów`);
       matchedWeights.push(weight);
       totalRiskPoints += weight.riskPoints;
       
@@ -69,11 +84,18 @@ export function analyzeAnswers(
         }
       });
     } else {
-      console.warn(`✗ No match: ${questionId} = "${answerText}"`);
+      console.warn(`   ❌ BRAK DOPASOWANIA!`);
+      console.warn(`   Dostępne odpowiedzi:`, weightsForQuestion.map(w => `"${w.answer}"`));
     }
     
     maxPossiblePoints += 10;
   });
+  
+  console.log('\n📊 === PODSUMOWANIE ===');
+  console.log('💯 Łącznie punktów:', totalRiskPoints);
+  console.log('🎯 Max możliwych:', maxPossiblePoints);
+  console.log('🎲 Dopasowane wagi:', matchedWeights.length);
+  console.log('📈 Risk scores:', riskScores);
   
   // 2. Oblicz procenty
   const overallRiskPercentage = maxPossiblePoints > 0 
