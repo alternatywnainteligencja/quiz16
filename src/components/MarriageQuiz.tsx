@@ -19,6 +19,12 @@
 /**
  * MarriageQuiz.tsx - WERSJA DEBUG
  */
+
+// TESTOWY ALERT
+alert('🔥 MarriageQuiz się ładuje!');
+console.log('🔥 MarriageQuiz file loaded');
+
+
 import React, { useState, useEffect } from 'react';
 import { QuizState } from '../quiz/types';
 import { Heart } from 'lucide-react';
