@@ -90,12 +90,21 @@ async function calculateRisk(
   console.log('🎯 Starting calculation for pathway:', pathway);
   console.log('📝 User answers:', answers);
   
+  // 🚨 DEBUG: Pokaż alert z informacjami
+  const answersCount = Object.keys(answers).length;
+  const answersPreview = Object.entries(answers).slice(0, 3).map(([k, v]) => `${k}: ${v}`).join('\n');
+  
+  alert(`🔍 DEBUG INFO:\n\nLiczba odpowiedzi: ${answersCount}\n\nPrzykładowe odpowiedzi:\n${answersPreview}\n\n(Kliknij OK aby kontynuować)`);
+  
   const weightsData = await getWeightsData();
   
   // Fallback do mock data jeśli brak wag
   if (!weightsData.weights || weightsData.weights.length === 0) {
     console.warn('⚠️ NO WEIGHTS - using MOCK data');
+    alert('⚠️ UWAGA: Używam danych testowych (MOCK), bo API nie działa!');
     weightsData.weights = createMockWeights();
+  } else {
+    alert(`✅ Załadowano ${weightsData.weights.length} wag z API`);
   }
   
   // 1. Analiza odpowiedzi i punktów ryzyka
