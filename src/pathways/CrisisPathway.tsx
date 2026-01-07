@@ -1,15 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import QuestionScreen from '../components/QuestionScreen';
 import { calculateCrisis } from '../calculations';
-import { fetchUnifiedDataWithCache, Question } from '../services/unifiedSheetsService';
-// TUŻ PO IMPORTACH
-console.log('🔥 CrisisPathway loaded!');
+import { fetchQuestionsWithCache, Question } from '../services/googleSheetsService';
 
-// W środku funkcji CrisisPathway, przed return:
-useEffect(() => {
-  console.log('🔥 CrisisPathway mounted!');
-  alert('🔥 CrisisPathway załadowany!');
-}, []);
 interface CrisisPathwayProps {
   onResult: (result: any) => void;
   onBack: () => void;
@@ -23,66 +16,93 @@ const CrisisPathway: React.FC<CrisisPathwayProps> = ({ onResult, onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [calculating, setCalculating] = useState(false);
 
-  // Fallback questions - na wypadek gdyby API nie działało
   const fallbackQuestions: Question[] = [
     {
       id: 'crisis_1',
-      text: 'Jak często dochodzi do intensywnych kłótni w ostatnim czasie?',
-      options: [
-        { text: 'Rzadko - raz na kilka miesięcy', riskPoints: 1, mainRisk: '-', sideRisks: [] },
-        { text: 'Kilka razy w miesiącu', riskPoints: 3, mainRisk: 'Rozstanie/Rozwód', sideRisks: [] },
-        { text: 'Co tydzień', riskPoints: 6, mainRisk: 'Rozstanie/Rozwód', sideRisks: ['Manipulacja'] },
-        { text: 'Prawie codziennie', riskPoints: 8, mainRisk: 'Rozstanie/Rozwód', sideRisks: ['Manipulacja'] },
-        { text: 'Kilka razy dziennie - żyjemy w stałym konflikcie', riskPoints: 10, mainRisk: 'Rozstanie/Rozwód', sideRisks: ['Manipulacja', 'Fałszywe oskarżenia'] }
+      q: 'Jak często dochodzi do intensywnych kłótni w ostatnim czasie?',
+      opts: [
+        { text: 'Rzadko - raz na kilka miesięcy' },
+        { text: 'Kilka razy w miesiącu' },
+        { text: 'Co tydzień' },
+        { text: 'Prawie codziennie' },
+        { text: 'Kilka razy dziennie - żyjemy w stałym konflikcie' }
       ]
     },
     {
       id: 'crisis_2',
-      text: 'Czy partnerka groziła Ci już rozstaniem/rozwodem?',
-      options: [
-        { text: 'Nigdy', riskPoints: 0, mainRisk: '-', sideRisks: [] },
-        { text: 'Raz, w emocjach', riskPoints: 2, mainRisk: '-', sideRisks: [] },
-        { text: 'Kilka razy', riskPoints: 5, mainRisk: 'Rozstanie/Rozwód', sideRisks: ['Manipulacja'] },
-        { text: 'Często to robi', riskPoints: 7, mainRisk: 'Rozstanie/Rozwód', sideRisks: ['Manipulacja'] },
-        { text: 'Używa tego jako narzędzia manipulacji', riskPoints: 10, mainRisk: 'Manipulacja', sideRisks: ['Rozstanie/Rozwód'] }
+      q: 'Czy partnerka groziła Ci już rozstaniem/rozwodem?',
+      opts: [
+        { text: 'Nigdy' },
+        { text: 'Raz, w emocjach' },
+        { text: 'Kilka razy' },
+        { text: 'Często to robi' },
+        { text: 'Używa tego jako narzędzia manipulacji' }
       ]
     },
     {
       id: 'crisis_3',
-      text: 'Czy w kłótniach pojawia się agresja fizyczna?',
-      options: [
-        { text: 'Nigdy', riskPoints: 0, mainRisk: '-', sideRisks: [] },
-        { text: 'Raz się zdarzyło', riskPoints: 3, mainRisk: '-', sideRisks: [] },
-        { text: 'Kilka razy - z jej strony', riskPoints: 7, mainRisk: 'Fałszywe oskarżenia', sideRisks: ['Rozstanie/Rozwód'] },
-        { text: 'Regularnie - sytuacja jest niebezpieczna', riskPoints: 10, mainRisk: 'Fałszywe oskarżenia', sideRisks: ['Rozstanie/Rozwód'] }
+      q: 'Czy w kłótniach pojawia się agresja fizyczna?',
+      opts: [
+        { text: 'Nigdy' },
+        { text: 'Raz się zdarzyło' },
+        { text: 'Kilka razy - z jej strony' },
+        { text: 'Kilka razy - z obu stron' },
+        { text: 'Regularnie - sytuacja jest niebezpieczna' }
+      ]
+    },
+    {
+      id: 'crisis_4',
+      q: 'Czy partnerka kontroluje Twoje finanse, telefon, kontakty?',
+      opts: [
+        { text: 'Nie, mam pełną swobodę' },
+        { text: 'Czasami pyta o szczegóły' },
+        { text: 'Sprawdza mój telefon/konta bez pytania' },
+        { text: 'Wymaga dostępu do wszystkiego' },
+        { text: 'Kontroluje każdy aspekt mojego życia' }
+      ]
+    },
+    {
+      id: 'crisis_5',
+      q: 'Czy myślałeś o pomocy prawnika lub terapeuty?',
+      opts: [
+        { text: 'Nie, nie widzę potrzeby' },
+        { text: 'Myślałem, ale jeszcze nie działałem' },
+        { text: 'Już poszukuję informacji' },
+        { text: 'Umówiłem się na konsultację' },
+        { text: 'Jestem w trakcie procesu' }
+      ]
+    },
+    {
+      id: 'crisis_6',
+      q: 'Czy są dzieci w związku?',
+      opts: [
+        { text: 'Nie' },
+        { text: 'Tak, jedno dziecko' },
+        { text: 'Tak, dwoje lub więcej dzieci' },
+        { text: 'Partnerka jest w ciąży' }
       ]
     }
   ];
 
   useEffect(() => {
-    const loadData = async () => {
+    const loadQuestions = async () => {
       try {
         setLoading(true);
-        console.log('🔄 Fetching unified data for crisis...');
-        
-        const data = await fetchUnifiedDataWithCache('crisis');
-        
-        console.log(`✅ Loaded ${data.questions.length} questions`);
-        console.log(`✅ Loaded ${data.weights.length} weights`);
-        
-        setQuestions(data.questions);
+        console.log('Fetching questions for crisis...');
+        const fetchedQuestions = await fetchQuestionsWithCache('crisis');
+        console.log(`Loaded ${fetchedQuestions.length} questions`);
+        setQuestions(fetchedQuestions);
         setError(null);
-        
       } catch (err) {
-        console.error('❌ Failed to fetch data, using fallback:', err);
-        setError('Używam lokalnych pytań (problem z połączeniem)');
+        console.error('Failed to fetch questions:', err);
+        setError('Używam lokalnych pytań');
         setQuestions(fallbackQuestions);
       } finally {
         setLoading(false);
       }
     };
 
-    loadData();
+    loadQuestions();
   }, []);
 
   const handleAnswer = async (value: string) => {
@@ -90,29 +110,33 @@ const CrisisPathway: React.FC<CrisisPathwayProps> = ({ onResult, onBack }) => {
     const newAnswers = { ...answers, [currentQuestion.id]: value };
     setAnswers(newAnswers);
 
-    console.log(`📝 Question ${currentQuestion.id}: "${value}"`);
+    console.log(`Question ${currentQuestion.id}: "${value}"`);
 
-    // Następne pytanie
-    const nextStep = step + 1;
+    const chosenOpt = currentQuestion.opts.find(opt =>
+      typeof opt === 'string' ? opt === value : opt.text === value
+    );
+
+    let nextStep = step + 1;
+
+    if (chosenOpt && typeof chosenOpt === 'object' && chosenOpt.next) {
+      const nextIndex = questions.findIndex(q => q.id === chosenOpt.next);
+      if (nextIndex !== -1) {
+        nextStep = nextIndex;
+      }
+    }
 
     if (nextStep < questions.length) {
       setStep(nextStep);
     } else {
-      console.log('🏁 Quiz completed!');
-      console.log('📊 Answers:', newAnswers);
+      console.log('Quiz completed!');
       
       try {
         setCalculating(true);
-        console.log('🧮 Calling calculateCrisis...');
-        
         const res = await calculateCrisis(newAnswers);
-        
-        console.log('✅ Result:', res);
+        console.log('Result:', res);
         onResult(res);
-        
       } catch (err) {
-        console.error('❌ Calculation error:', err);
-        alert(`❌ Błąd obliczeń:\n\n${err.message || err}`);
+        console.error('Error:', err);
         setError('Błąd podczas obliczania wyników');
         setCalculating(false);
       }
@@ -139,9 +163,7 @@ const CrisisPathway: React.FC<CrisisPathwayProps> = ({ onResult, onBack }) => {
         alignItems: 'center', 
         height: '100vh',
         flexDirection: 'column',
-        gap: '1rem',
-        padding: '2rem',
-        textAlign: 'center'
+        gap: '1rem'
       }}>
         <div style={{ fontSize: '3rem' }}>⏳</div>
         <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
@@ -159,24 +181,12 @@ const CrisisPathway: React.FC<CrisisPathwayProps> = ({ onResult, onBack }) => {
         alignItems: 'center', 
         height: '100vh',
         flexDirection: 'column',
-        gap: '1rem',
-        padding: '2rem',
-        textAlign: 'center'
+        gap: '1rem'
       }}>
         <div style={{ fontSize: '3rem' }}>🧮</div>
         <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
-          Analizuję Twoje odpowiedzi...
+          Analizuję odpowiedzi...
         </div>
-      </div>
-    );
-  }
-
-  if (questions.length === 0) {
-    return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <h2>❌ Brak pytań</h2>
-        <p>Nie udało się załadować pytań. Sprawdź konfigurację.</p>
-        <button onClick={onBack}>Powrót</button>
       </div>
     );
   }
@@ -199,8 +209,8 @@ const CrisisPathway: React.FC<CrisisPathwayProps> = ({ onResult, onBack }) => {
       )}
       <QuestionScreen
         title="⚠️ W kryzysie"
-        question={q.text}
-        options={q.options.map(opt => opt.text)}
+        question={q.q}
+        options={q.opts.map(opt => typeof opt === 'string' ? opt : opt.text)}
         onAnswer={handleAnswer}
         onBack={handleBack}
         progress={progress}
