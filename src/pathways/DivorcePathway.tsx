@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import QuestionScreen from '../components/QuestionScreen';
-import { calculateDivorce } from '../calculations/';
-import { fetchQuestionsWithCache, Question, QuestionOption } from '../services/unifiedSheetsService';
+import { calculateDivorce } from '../calculations/calculations';
+import { fetchQuestionsWithCache, Question, QuestionOption } from '../services/googleSheetsService';
 
 interface DivorcePathwayProps {
   onResult: (result: any) => void;

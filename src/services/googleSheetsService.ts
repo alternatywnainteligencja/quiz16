@@ -8,18 +8,8 @@ const CSV_URLS = {
   crisis: import.meta.env.VITE_SHEET_CSV_URL_CRISIS || '',
   divorce: import.meta.env.VITE_SHEET_CSV_URL_DIVORCE || '',
   married: import.meta.env.VITE_SHEET_CSV_URL_MARRIED || '',
-  weights: import.meta.env.VITE_SHEET_CSV_URL_WEIGHTS || '',
+  weights: import.meta.env.VITE_SHEET_CSV_URL_WEIGHTS || '', // NOWY!
 };
-
-// 🔥 DEBUG: Sprawdź czy URL-e są skonfigurowane
-console.log('📋 CSV URLs configured:');
-Object.entries(CSV_URLS).forEach(([key, url]) => {
-  if (url) {
-    console.log(`  ✅ ${key}: ${url.substring(0, 50)}...`);
-  } else {
-    console.warn(`  ❌ ${key}: BRAK URL!`);
-  }
-});
 
 export type PathwayType = 'before' | 'crisis' | 'divorce' | 'married';
 
@@ -34,20 +24,20 @@ export interface Question {
   opts: (string | QuestionOption)[];
 }
 
+// NOWE TYPY DLA WAG
 export interface RiskWeight {
-  questionId: string;
-  questionText: string;
-  answer: string;
-  riskPoints: number;
-  mainRisk: string;
-  sideRisks: string[];
-  comment?: string;
+  questionId: string; // ID pytania (np. "1")
+  questionText: string; // Tekst pytania
+  answer: string; // Dokładny tekst odpowiedzi
+  riskPoints: number; // Punkty ryzyka (0-10)
+  mainRisk: string; // Ryzyko główne (np. "Rozstanie/Rozwód")
+  sideRisks: string[]; // Ryzyka poboczne (array)
+  comment?: string; // Opcjonalny komentarz
 }
 
 export interface WeightsData {
   weights: RiskWeight[];
-  riskCategories: string[];
-  lastUpdated: string;
+  riskCategories: string[]; // Unikalne kategorie ryzyk
 }
 
 /**
@@ -56,34 +46,21 @@ export interface WeightsData {
 export async function fetchQuestionsFromSheets(pathway: PathwayType): Promise<Question[]> {
   const csvUrl = CSV_URLS[pathway];
   
-  console.log(`🔄 Fetching questions for pathway: ${pathway}`);
-  
   if (!csvUrl) {
-    const errorMsg = `❌ Brak URL dla pathway: ${pathway}\n\nSprawdź plik .env:\nVITE_SHEET_CSV_URL_${pathway.toUpperCase()}`;
-    console.error(errorMsg);
-    alert(errorMsg);
     throw new Error(`No CSV URL configured for pathway: ${pathway}`);
   }
-
-  console.log(`📡 Wysyłam request do: ${csvUrl.substring(0, 50)}...`);
-
   try {
     const response = await axios.get(csvUrl, {
       responseType: 'arraybuffer',
       headers: {
         'Accept': 'text/csv; charset=utf-8'
-      },
-      timeout: 10000 // 10 sekund timeout
+      }
     });
-    
-    console.log(`✅ Otrzymano odpowiedź (${response.status})`);
     
     const decoder = new TextDecoder('utf-8');
     const csvData = decoder.decode(response.data);
     const lines = csvData.trim().split('\n');
     const dataLines = lines.slice(1);
-    
-    console.log(`📊 Liczba linii w CSV: ${dataLines.length}`);
     
     const questions: Question[] = dataLines
       .filter((line: string) => line.trim())
@@ -134,87 +111,50 @@ export async function fetchQuestionsFromSheets(pathway: PathwayType): Promise<Qu
       .filter((q): q is Question => q !== null);
 
     if (questions.length === 0) {
-      const errorMsg = `❌ Brak pytań w arkuszu dla ${pathway}!`;
-      console.error(errorMsg);
-      alert(errorMsg);
       throw new Error('No valid questions found in sheet');
     }
 
-    console.log(`✅ Załadowano ${questions.length} pytań dla ${pathway}`);
     return questions;
-
-  } catch (error: any) {
-    console.error('❌ Error fetching questions:', error);
-    
-    let errorMsg = `❌ BŁĄD POBIERANIA PYTAŃ (${pathway}):\n\n`;
-    
-    if (error.code === 'ECONNABORTED') {
-      errorMsg += 'Timeout - brak odpowiedzi z serwera\n';
-    } else if (error.response) {
-      errorMsg += `Status: ${error.response.status}\n`;
-      errorMsg += `Dane: ${error.response.statusText}\n`;
-    } else if (error.request) {
-      errorMsg += 'Brak odpowiedzi od serwera\n';
-      errorMsg += 'Sprawdź połączenie internetowe\n';
-    } else {
-      errorMsg += error.message + '\n';
-    }
-    
-    errorMsg += `\nURL: ${csvUrl.substring(0, 100)}...`;
-    
-    alert(errorMsg);
+  } catch (error) {
+    console.error('Error fetching questions from Google Sheets:', error);
     throw error;
   }
 }
 
 /**
- * FUNKCJA: Pobiera wagi/ryzyko z arkusza
+ * NOWA FUNKCJA: Pobiera wagi/ryzyko z arkusza
+ * Format CSV: Question | Odpowiedź | Punkty ryzyka | Ryzyko główne | Ryzyka poboczne | Komentarz
  */
 export async function fetchWeightsFromSheets(): Promise<WeightsData> {
   const csvUrl = CSV_URLS.weights;
   
-  console.log('🔄 Fetching weights from Google Sheets...');
-  
   if (!csvUrl) {
-    const errorMsg = '❌ Brak URL dla WEIGHTS!\n\nSprawdź plik .env:\nVITE_SHEET_CSV_URL_WEIGHTS';
-    console.error(errorMsg);
-    alert(errorMsg);
     throw new Error('No weights CSV URL configured');
   }
-
-  console.log(`📡 Wysyłam request do weights: ${csvUrl.substring(0, 50)}...`);
 
   try {
     const response = await axios.get(csvUrl, {
       responseType: 'arraybuffer',
       headers: {
         'Accept': 'text/csv; charset=utf-8'
-      },
-      timeout: 10000
+      }
     });
-    
-    console.log(`✅ Otrzymano odpowiedź weights (${response.status})`);
     
     const decoder = new TextDecoder('utf-8');
     const csvData = decoder.decode(response.data);
     const lines = csvData.trim().split('\n');
-    
-    console.log(`📊 Header weights: ${lines[0]}`);
-    
-    const dataLines = lines.slice(1);
-    
-    console.log(`📊 Liczba linii weights: ${dataLines.length}`);
+    const dataLines = lines.slice(1); // Skip header
     
     const weights: RiskWeight[] = [];
     const riskCategoriesSet = new Set<string>();
 
-    dataLines.forEach((line: string, index: number) => {
+    dataLines.forEach((line: string) => {
       if (!line.trim()) return;
       
       const columns = parseCSVLine(line);
       
       if (columns.length < 5) {
-        console.warn(`Invalid weight row ${index}:`, line);
+        console.warn('Invalid weight row:', line);
         return;
       }
 
@@ -228,13 +168,16 @@ export async function fetchWeightsFromSheets(): Promise<WeightsData> {
         comment = ''
       ] = columns;
 
+      // Parse risk points
       const riskPoints = parseInt(riskPointsStr.trim()) || 0;
 
+      // Parse side risks (separated by commas)
       const sideRisks = sideRisksStr
         .split(',')
         .map(r => r.trim())
         .filter(r => r.length > 0 && r !== '-');
 
+      // Add to categories
       if (mainRisk && mainRisk.trim() !== '-') {
         riskCategoriesSet.add(mainRisk.trim());
       }
@@ -251,39 +194,19 @@ export async function fetchWeightsFromSheets(): Promise<WeightsData> {
       });
     });
 
-    console.log(`✅ Załadowano ${weights.length} wag`);
-    console.log(`📋 Kategorie ryzyk:`, Array.from(riskCategoriesSet));
-
     return {
       weights,
-      riskCategories: Array.from(riskCategoriesSet).filter(c => c !== '-'),
-      lastUpdated: new Date().toISOString()
+      riskCategories: Array.from(riskCategoriesSet).filter(c => c !== '-')
     };
-
-  } catch (error: any) {
-    console.error('❌ Error fetching weights:', error);
-    
-    let errorMsg = '❌ BŁĄD POBIERANIA WAG:\n\n';
-    
-    if (error.code === 'ECONNABORTED') {
-      errorMsg += 'Timeout - brak odpowiedzi z serwera\n';
-    } else if (error.response) {
-      errorMsg += `Status: ${error.response.status}\n`;
-      errorMsg += `Dane: ${error.response.statusText}\n`;
-    } else if (error.request) {
-      errorMsg += 'Brak odpowiedzi od serwera\n';
-      errorMsg += 'Sprawdź połączenie internetowe\n';
-    } else {
-      errorMsg += error.message + '\n';
-    }
-    
-    errorMsg += `\nURL: ${csvUrl.substring(0, 100)}...`;
-    
-    alert(errorMsg);
+  } catch (error) {
+    console.error('Error fetching weights from Google Sheets:', error);
     throw error;
   }
 }
 
+/**
+ * Parse a CSV line handling quoted strings properly
+ */
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let current = '';
@@ -312,6 +235,9 @@ function parseCSVLine(line: string): string[] {
   return result.map(col => col.trim());
 }
 
+/**
+ * Cache questions to avoid repeated requests
+ */
 const questionCache: Record<PathwayType, { questions: Question[]; timestamp: number } | null> = {
   before: null,
   crisis: null,
@@ -319,41 +245,48 @@ const questionCache: Record<PathwayType, { questions: Question[]; timestamp: num
   married: null,
 };
 
+// NOWY CACHE DLA WAG
 let weightsCache: { data: WeightsData; timestamp: number } | null = null;
 
-const CACHE_DURATION = 5 * 60 * 1000;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export async function fetchQuestionsWithCache(pathway: PathwayType): Promise<Question[]> {
   const now = Date.now();
   const cached = questionCache[pathway];
   
   if (cached && (now - cached.timestamp) < CACHE_DURATION) {
-    console.log(`✅ Using cached questions for ${pathway}`);
+    console.log(`Using cached questions for ${pathway}`);
     return cached.questions;
   }
   
-  console.log(`🔄 Fetching fresh questions for ${pathway}`);
+  console.log(`Fetching fresh questions from Google Sheets for ${pathway}`);
   const questions = await fetchQuestionsFromSheets(pathway);
   questionCache[pathway] = { questions, timestamp: now };
   
   return questions;
 }
 
+/**
+ * NOWA FUNKCJA: Cache dla wag
+ */
 export async function fetchWeightsWithCache(): Promise<WeightsData> {
   const now = Date.now();
   
   if (weightsCache && (now - weightsCache.timestamp) < CACHE_DURATION) {
-    console.log('✅ Using cached weights');
+    console.log('Using cached weights');
     return weightsCache.data;
   }
   
-  console.log('🔄 Fetching fresh weights');
+  console.log('Fetching fresh weights from Google Sheets');
   const data = await fetchWeightsFromSheets();
   weightsCache = { data, timestamp: now };
   
   return data;
 }
 
+/**
+ * Clear the cache manually if needed
+ */
 export function clearQuestionsCache(pathway?: PathwayType): void {
   if (pathway) {
     questionCache[pathway] = null;

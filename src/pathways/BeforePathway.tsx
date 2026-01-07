@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import QuestionScreen from '../components/QuestionScreen';
 import { calculateBefore } from '../calculations/calculations';
-import { fetchQuestionsWithCache, Question, QuestionOption } from '../services/unifiedSheetsService';
+import { fetchQuestionsWithCache, Question, QuestionOption } from '../services/googleSheetsService';
 
 interface BeforePathwayProps {
   onResult: (result: any) => void;
