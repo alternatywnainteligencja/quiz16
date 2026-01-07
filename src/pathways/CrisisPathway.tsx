@@ -2,7 +2,14 @@ import React, { useState, useEffect } from 'react';
 import QuestionScreen from '../components/QuestionScreen';
 import { calculateCrisis } from './calculations';  // jeśli CrisisPathway jest w src/
 import { fetchQuestionsWithCache, Question, QuestionOption } from '../services/googleSheetsService';
+// TUŻ PO IMPORTACH
+console.log('🔥 CrisisPathway loaded!');
 
+// W środku funkcji CrisisPathway, przed return:
+useEffect(() => {
+  console.log('🔥 CrisisPathway mounted!');
+  alert('🔥 CrisisPathway załadowany!');
+}, []);
 interface CrisisPathwayProps {
   onResult: (result: any) => void;
   onBack: () => void;
