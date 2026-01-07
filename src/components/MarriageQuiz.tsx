@@ -22,14 +22,44 @@ import CrisisPathway from '../pathways/CrisisPathway'; // Ścieżka quizu dla ma
 import DivorcePathway from '../pathways/DivorcePathway'; // Ścieżka quizu dla osób w trakcie rozwodu
 import ResultDisplay from './ResultDisplay'; // Komponent wyświetlający wynik quizu
 
-// Główny komponent quizu małżeńskiego
-const MarriageQuiz = () => {
-  // Stan przechowujący aktualnie wybraną ścieżkę ("pathway") quizu
-  const [pathway, setPathway] = useState<string | null>(null);
 
-  // Stan przechowujący wynik quizu; null oznacza brak wyniku (quiz w trakcie)
+// 🔥 DEBUG: Sprawdź czy komponent się ładuje
+console.log('🔥 MarriageQuiz.tsx LOADED!');
+
+const MarriageQuiz = () => {
+  const [pathway, setPathway] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
 
+  // 🔥 DEBUG: Sprawdź czy komponent się montuje
+  useEffect(() => {
+    console.log('🔥 MarriageQuiz MOUNTED!');
+    alert('🔥 MarriageQuiz załadowany!');
+  }, []);
+
+  // 🔥 DEBUG: Loguj zmiany pathway
+  useEffect(() => {
+    console.log('🎯 Pathway changed to:', pathway);
+    if (pathway) {
+      alert(`🎯 Wybrano pathway: ${pathway}`);
+    }
+  }, [pathway]);
+
+  // 🔥 DEBUG: Loguj zmiany result
+  useEffect(() => {
+    console.log('📊 Result changed:', result);
+    if (result) {
+      alert(`📊 Otrzymano wynik!\nRyzyko: ${result.overallRiskPercentage}%\nPoziom: ${result.riskLevel}`);
+    }
+  }, [result]);
+
+  // Handler dla wyniku - z dodatkowym logowaniem
+  const handleResult = (res: any) => {
+    console.log('✅ handleResult called with:', res);
+    alert(`✅ handleResult wywołane!\n\nRyzyko: ${res?.overallRiskPercentage}%\nPoziom: ${res?.riskLevel}`);
+    setResult(res);
+  };
+
+  
   // Jeśli wynik jest dostępny, wyświetlamy ekran z wynikiem quizu
   if (result) {
     return (
