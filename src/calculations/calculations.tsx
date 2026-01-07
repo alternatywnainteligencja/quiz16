@@ -1,9 +1,8 @@
 /**
  * Główny moduł kalkulacji ryzyka
- * ZAKTUALIZOWANY: używa unified data (pytania + wagi w jednym)
  */
 
-import { fetchUnifiedDataWithCache } from '../services/unifiedSheetsService';
+import { fetchWeightsWithCache, type WeightsData } from '../services/googleSheetsService';
 import { analyzeAnswers, type AnalysisResult } from './analysisEngine';
 import { generateContent } from './contentGenerator';
 import { createMockWeights } from './mockData';
@@ -65,28 +64,19 @@ export interface CalculationResult {
 }
 
 // Cache dla wag
-let weightsCache: any = null;
-let currentPathway: string | null = null;
+let weightsDataCache: WeightsData | null = null;
 
-async function getWeights(pathway: string) {
-  // Jeśli zmienił się pathway, wyczyść cache
-  if (currentPathway !== pathway) {
-    weightsCache = null;
-    currentPathway = pathway;
-  }
-
-  if (!weightsCache) {
+async function getWeightsData(): Promise<WeightsData> {
+  if (!weightsDataCache) {
     try {
-      console.log(`📥 Fetching weights for pathway: ${pathway}`);
-      const data = await fetchUnifiedDataWithCache(pathway as any);
-      weightsCache = data.weights;
-      console.log('✅ Loaded weights:', weightsCache.length);
+      weightsDataCache = await fetchWeightsWithCache();
+      console.log('✅ Loaded weights:', weightsDataCache.weights?.length || 0);
     } catch (error) {
       console.error('❌ Failed to load weights:', error);
-      weightsCache = [];
+      weightsDataCache = { weights: [], riskCategories: [], lastUpdated: new Date().toISOString() };
     }
   }
-  return weightsCache;
+  return weightsDataCache;
 }
 
 /**
@@ -99,19 +89,16 @@ async function calculateRisk(
   console.log('🎯 Starting calculation for pathway:', pathway);
   console.log('📝 User answers:', answers);
   
-  let weights = await getWeights(pathway);
+  const weightsData = await getWeightsData();
   
   // Fallback do mock data jeśli brak wag
-  if (!weights || weights.length === 0) {
+  if (!weightsData.weights || weightsData.weights.length === 0) {
     console.warn('⚠️ NO WEIGHTS - using MOCK data');
-    alert('⚠️ UWAGA: Używam danych testowych (MOCK)!');
-    weights = createMockWeights();
-  } else {
-    console.log(`✅ Using ${weights.length} weights from unified sheet`);
+    weightsData.weights = createMockWeights();
   }
   
   // 1. Analiza odpowiedzi i punktów ryzyka
-  const analysis = analyzeAnswers(answers, weights);
+  const analysis = analyzeAnswers(answers, weightsData.weights);
   
   console.log('💯 Total risk points:', analysis.totalRiskPoints, '/', analysis.maxPossiblePoints);
   console.log('📊 Risk breakdown:', analysis.riskBreakdown);
