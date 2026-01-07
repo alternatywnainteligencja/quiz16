@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import QuestionScreen from '../components/QuestionScreen';
-import { calculateMarried } from '../calculations/calculations';
+import { calculateMarried } from '../calculations/';
 import { fetchQuestionsWithCache, Question, QuestionOption } from '../services/googleSheetsService';
 
 interface MarriedPathwayProps {
