@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import QuestionScreen from '../components/QuestionScreen';
-import { calculateCrisis } from './calculations';  // jeśli CrisisPathway jest w src/
-import { fetchQuestionsWithCache, Question, QuestionOption } from '../services/googleSheetsService';
+import { calculateCrisis } from '../calculations';
+import { fetchUnifiedDataWithCache, Question } from '../services/unifiedSheetsService';
 // TUŻ PO IMPORTACH
 console.log('🔥 CrisisPathway loaded!');
 
@@ -23,94 +23,66 @@ const CrisisPathway: React.FC<CrisisPathwayProps> = ({ onResult, onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [calculating, setCalculating] = useState(false);
 
-  // Fallback questions - pełne przykłady dla ścieżki "kryzys"
+  // Fallback questions - na wypadek gdyby API nie działało
   const fallbackQuestions: Question[] = [
     {
-      id: '1',
-      q: 'Jak często dochodzi do intensywnych kłótni w ostatnim czasie?',
-      opts: [
-        { text: 'Rzadko - raz na kilka miesięcy' },
-        { text: 'Kilka razy w miesiącu' },
-        { text: 'Co tydzień' },
-        { text: 'Prawie codziennie' },
-        { text: 'Kilka razy dziennie - żyjemy w stałym konflikcie' }
+      id: 'crisis_1',
+      text: 'Jak często dochodzi do intensywnych kłótni w ostatnim czasie?',
+      options: [
+        { text: 'Rzadko - raz na kilka miesięcy', riskPoints: 1, mainRisk: '-', sideRisks: [] },
+        { text: 'Kilka razy w miesiącu', riskPoints: 3, mainRisk: 'Rozstanie/Rozwód', sideRisks: [] },
+        { text: 'Co tydzień', riskPoints: 6, mainRisk: 'Rozstanie/Rozwód', sideRisks: ['Manipulacja'] },
+        { text: 'Prawie codziennie', riskPoints: 8, mainRisk: 'Rozstanie/Rozwód', sideRisks: ['Manipulacja'] },
+        { text: 'Kilka razy dziennie - żyjemy w stałym konflikcie', riskPoints: 10, mainRisk: 'Rozstanie/Rozwód', sideRisks: ['Manipulacja', 'Fałszywe oskarżenia'] }
       ]
     },
     {
-      id: '2',
-      q: 'Czy partnerka groziła Ci już rozstaniem/rozwodem?',
-      opts: [
-        { text: 'Nigdy' },
-        { text: 'Raz, w emocjach' },
-        { text: 'Kilka razy' },
-        { text: 'Często to robi' },
-        { text: 'Używa tego jako narzędzia manipulacji' }
+      id: 'crisis_2',
+      text: 'Czy partnerka groziła Ci już rozstaniem/rozwodem?',
+      options: [
+        { text: 'Nigdy', riskPoints: 0, mainRisk: '-', sideRisks: [] },
+        { text: 'Raz, w emocjach', riskPoints: 2, mainRisk: '-', sideRisks: [] },
+        { text: 'Kilka razy', riskPoints: 5, mainRisk: 'Rozstanie/Rozwód', sideRisks: ['Manipulacja'] },
+        { text: 'Często to robi', riskPoints: 7, mainRisk: 'Rozstanie/Rozwód', sideRisks: ['Manipulacja'] },
+        { text: 'Używa tego jako narzędzia manipulacji', riskPoints: 10, mainRisk: 'Manipulacja', sideRisks: ['Rozstanie/Rozwód'] }
       ]
     },
     {
-      id: '3',
-      q: 'Czy w kłótniach pojawia się agresja fizyczna (popychanie, rzucanie rzeczami)?',
-      opts: [
-        { text: 'Nigdy' },
-        { text: 'Raz się zdarzyło' },
-        { text: 'Kilka razy - z jej strony' },
-        { text: 'Kilka razy - z obu stron' },
-        { text: 'Regularnie - sytuacja jest niebezpieczna' }
-      ]
-    },
-    {
-      id: '4',
-      q: 'Czy partnerka kontroluje Twoje finanse, telefon, kontakty ze znajomymi?',
-      opts: [
-        { text: 'Nie, mam pełną swobodę' },
-        { text: 'Czasami pyta o szczegóły' },
-        { text: 'Sprawdza mój telefon/konta bez pytania' },
-        { text: 'Wymaga dostępu do wszystkiego' },
-        { text: 'Kontroluje każdy aspekt mojego życia' }
-      ]
-    },
-    {
-      id: '5',
-      q: 'Czy myślałeś o tym, żeby szukać pomocy prawnika lub terapeuty?',
-      opts: [
-        { text: 'Nie, nie widzę potrzeby' },
-        { text: 'Myślałem, ale jeszcze nie działałem' },
-        { text: 'Już poszukuję informacji' },
-        { text: 'Umówiłem się na konsultację' },
-        { text: 'Jestem w trakcie procesu prawnego/terapii' }
-      ]
-    },
-    {
-      id: '6',
-      q: 'Czy są dzieci w związku?',
-      opts: [
-        { text: 'Nie' },
-        { text: 'Tak, jedno dziecko' },
-        { text: 'Tak, dwoje lub więcej dzieci' },
-        { text: 'Partnerka jest w ciąży' }
+      id: 'crisis_3',
+      text: 'Czy w kłótniach pojawia się agresja fizyczna?',
+      options: [
+        { text: 'Nigdy', riskPoints: 0, mainRisk: '-', sideRisks: [] },
+        { text: 'Raz się zdarzyło', riskPoints: 3, mainRisk: '-', sideRisks: [] },
+        { text: 'Kilka razy - z jej strony', riskPoints: 7, mainRisk: 'Fałszywe oskarżenia', sideRisks: ['Rozstanie/Rozwód'] },
+        { text: 'Regularnie - sytuacja jest niebezpieczna', riskPoints: 10, mainRisk: 'Fałszywe oskarżenia', sideRisks: ['Rozstanie/Rozwód'] }
       ]
     }
   ];
 
   useEffect(() => {
-    const loadQuestions = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        console.log('Fetching questions for "crisis" pathway...');
-        const fetchedQuestions = await fetchQuestionsWithCache('crisis');
-        console.log(`Loaded ${fetchedQuestions.length} questions`);
-        setQuestions(fetchedQuestions);
+        console.log('🔄 Fetching unified data for crisis...');
+        
+        const data = await fetchUnifiedDataWithCache('crisis');
+        
+        console.log(`✅ Loaded ${data.questions.length} questions`);
+        console.log(`✅ Loaded ${data.weights.length} weights`);
+        
+        setQuestions(data.questions);
         setError(null);
+        
       } catch (err) {
-        console.error('Failed to fetch questions, using fallback:', err);
-        setError('Używam lokalnych pytań (problem z połączeniem do Google Sheets)');
+        console.error('❌ Failed to fetch data, using fallback:', err);
+        setError('Używam lokalnych pytań (problem z połączeniem)');
         setQuestions(fallbackQuestions);
       } finally {
         setLoading(false);
       }
     };
 
-    loadQuestions();
+    loadData();
   }, []);
 
   const handleAnswer = async (value: string) => {
@@ -118,38 +90,30 @@ const CrisisPathway: React.FC<CrisisPathwayProps> = ({ onResult, onBack }) => {
     const newAnswers = { ...answers, [currentQuestion.id]: value };
     setAnswers(newAnswers);
 
-    console.log(`Question ${currentQuestion.id}: "${value}"`);
+    console.log(`📝 Question ${currentQuestion.id}: "${value}"`);
 
-    const chosenOpt = currentQuestion.opts.find(opt =>
-      typeof opt === 'string' ? opt === value : opt.text === value
-    );
-
-    let nextStep = step + 1;
-
-    if (chosenOpt && typeof chosenOpt === 'object' && chosenOpt.next) {
-      const nextIndex = questions.findIndex(q => q.id === chosenOpt.next);
-      if (nextIndex !== -1) {
-        nextStep = nextIndex;
-        console.log(`Conditional jump to question: ${chosenOpt.next}`);
-      } else {
-        console.warn(`Next question with id "${chosenOpt.next}" not found. Proceeding to next question.`);
-      }
-    }
+    // Następne pytanie
+    const nextStep = step + 1;
 
     if (nextStep < questions.length) {
       setStep(nextStep);
     } else {
-      console.log('Quiz completed! Calculating results...');
-      console.log('Answers:', newAnswers);
+      console.log('🏁 Quiz completed!');
+      console.log('📊 Answers:', newAnswers);
       
       try {
         setCalculating(true);
+        console.log('🧮 Calling calculateCrisis...');
+        
         const res = await calculateCrisis(newAnswers);
-        console.log('Calculation result:', res);
+        
+        console.log('✅ Result:', res);
         onResult(res);
+        
       } catch (err) {
-        console.error('Error calculating results:', err);
-        setError('Błąd podczas obliczania wyników. Spróbuj ponownie.');
+        console.error('❌ Calculation error:', err);
+        alert(`❌ Błąd obliczeń:\n\n${err.message || err}`);
+        setError('Błąd podczas obliczania wyników');
         setCalculating(false);
       }
     }
@@ -183,9 +147,6 @@ const CrisisPathway: React.FC<CrisisPathwayProps> = ({ onResult, onBack }) => {
         <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
           Ładowanie pytań...
         </div>
-        <div style={{ fontSize: '0.875rem', color: '#666' }}>
-          Pobieranie danych z Google Sheets
-        </div>
       </div>
     );
   }
@@ -206,9 +167,16 @@ const CrisisPathway: React.FC<CrisisPathwayProps> = ({ onResult, onBack }) => {
         <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
           Analizuję Twoje odpowiedzi...
         </div>
-        <div style={{ fontSize: '0.875rem', color: '#666' }}>
-          Kalkulacja ryzyka na podstawie wag z arkusza
-        </div>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <h2>❌ Brak pytań</h2>
+        <p>Nie udało się załadować pytań. Sprawdź konfigurację.</p>
+        <button onClick={onBack}>Powrót</button>
       </div>
     );
   }
@@ -224,21 +192,15 @@ const CrisisPathway: React.FC<CrisisPathwayProps> = ({ onResult, onBack }) => {
           backgroundColor: '#fff3cd', 
           color: '#856404',
           textAlign: 'center',
-          fontSize: '0.875rem',
-          borderBottom: '1px solid #ffeaa7',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '0.5rem'
+          fontSize: '0.875rem'
         }}>
-          <span style={{ fontSize: '1.25rem' }}>⚠️</span>
-          <span>{error}</span>
+          ⚠️ {error}
         </div>
       )}
       <QuestionScreen
         title="⚠️ W kryzysie"
-        question={q.q}
-        options={q.opts.map(opt => typeof opt === 'string' ? opt : opt.text)}
+        question={q.text}
+        options={q.options.map(opt => opt.text)}
         onAnswer={handleAnswer}
         onBack={handleBack}
         progress={progress}
