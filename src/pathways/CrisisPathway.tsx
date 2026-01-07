@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import QuestionScreen from '../components/QuestionScreen';
-import { calculateCrisis } from '../calculations/';
+import { calculateCrisis } from './calculations';  // jeśli CrisisPathway jest w src/
 import { fetchQuestionsWithCache, Question, QuestionOption } from '../services/googleSheetsService';
 
 interface CrisisPathwayProps {
