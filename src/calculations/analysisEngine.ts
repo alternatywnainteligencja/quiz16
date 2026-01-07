@@ -97,6 +97,9 @@ export function analyzeAnswers(
   console.log('🎲 Dopasowane wagi:', matchedWeights.length);
   console.log('📈 Risk scores:', riskScores);
   
+  // 🚨 DEBUG: Pokaż wynik
+  alert(`📊 WYNIK ANALIZY:\n\nPunkty ryzyka: ${totalRiskPoints}/${maxPossiblePoints}\nDopasowań: ${matchedWeights.length}/${Object.keys(answers).length}\n\n${matchedWeights.length === 0 ? '❌ PROBLEM: Brak dopasowań!' : '✅ OK'}`);
+  
   // 2. Oblicz procenty
   const overallRiskPercentage = maxPossiblePoints > 0 
     ? Math.round((totalRiskPoints / maxPossiblePoints) * 100)
