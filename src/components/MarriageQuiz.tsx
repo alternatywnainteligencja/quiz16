@@ -20,9 +20,7 @@
  * MarriageQuiz.tsx - WERSJA DEBUG
  */
 
-// TESTOWY ALERT
-alert('🔥 MarriageQuiz się ładuje!');
-console.log('🔥 MarriageQuiz file loaded');
+
 
 
 import React, { useState, useEffect } from 'react';
@@ -34,8 +32,9 @@ import CrisisPathway from '../pathways/CrisisPathway';
 import DivorcePathway from '../pathways/DivorcePathway';
 import ResultDisplay from './ResultDisplay';
 
-// 🔥 DEBUG: Sprawdź czy komponent się ładuje
-console.log('🔥 MarriageQuiz.tsx LOADED!');
+// TESTOWY ALERT
+alert('🔥 MarriageQuiz się ładuje!');
+console.log('🔥 MarriageQuiz file loaded');
 
 const MarriageQuiz = () => {
   const [pathway, setPathway] = useState<string | null>(null);
