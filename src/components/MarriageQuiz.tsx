@@ -16,6 +16,9 @@
 /**
  * MarriageQuiz.tsx - WERSJA DEBUG
  */
+/**
+ * MarriageQuiz.tsx - WERSJA DEBUG
+ */
 import React, { useState, useEffect } from 'react';
 import { QuizState } from '../quiz/types';
 import { Heart } from 'lucide-react';
