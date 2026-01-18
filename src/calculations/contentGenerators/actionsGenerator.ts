@@ -80,5 +80,5 @@ export function generateActionItems(
   
   return actions.slice(0, 6);
 }
-```
+
 
